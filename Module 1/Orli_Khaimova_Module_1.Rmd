@@ -1,0 +1,94 @@
+---
+title: "Module 1"
+author: "Orli Khaimova"
+date: "2023-02-12"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+```
+
+**Principles of Data Visualization and Introduction to ggplot2**
+
+I have provided you with data about the 5,000 fastest growing companies in the US, as compiled by Inc. magazine. lets read this in:
+
+```{r}
+inc <- read.csv("https://raw.githubusercontent.com/charleyferrari/CUNY_DATA_608/master/module1/Data/inc5000_data.csv", header= TRUE)
+```
+
+And lets preview this data:
+
+```{r}
+head(inc)
+```
+
+```{r}
+summary(inc)
+```
+
+Think a bit on what these summaries mean. Use the space below to add some more relevant non-visual exploratory information you think helps you understand this data:
+
+```{r}
+str(inc)
+```
+
+```{r}
+inc %>% 
+  count(Industry, sort = TRUE)
+```
+
+
+## Question 1
+
+Create a graph that shows the distribution of companies in the dataset by State (ie how many are in each state). There are a lot of States, so consider which axis you should use. This visualization is ultimately going to be consumed on a 'portrait' oriented screen (ie taller than wide), which should further guide your layout choices.
+
+```{r, fig.height = 10, fig.width = 8}
+inc %>%
+  count(State, sort = TRUE) %>%
+  ggplot(., aes(x= n, y = reorder(State, n))) +
+  geom_bar(stat = "identity", ) +
+  labs(title = "Distribution of Companies by State", 
+       y = "State", 
+       x = "Number of Companies")
+```
+
+## Quesiton 2
+
+Lets dig in on the state with the 3rd most companies in the data set. Imagine you work for the state and are interested in how many people are employed by companies in different industries. Create a plot that shows the average and/or median employment by industry for companies in this state (only use cases with full data, use R's `complete.cases()` function.) In addition to this, your graph should show how variable the ranges are, and you should deal with outliers.
+
+Box plots help in visualizing the medians and the variability of each range. At first glance, there was a major outlier for "Business Products & Services" with 32,000 employees and another one for "Consumer Products & Services" with 10,000 employees. I filtered out companies with over 2,000 employees.
+
+```{r, fig.height = 10, fig.width = 8}
+inc %>%
+  filter(State == "NY",
+         complete.cases(.),
+         Employees < 2000) %>%
+  arrange(., desc(Employees)) %>%
+  ggplot(., aes(x= Employees, y = reorder(Industry, Employees))) +
+  geom_boxplot(outlier.size = 1.5, outlier.shape = 21) +
+  labs(title = "Distribution of Companies in NY", y = "Industry", 
+       x = "Number of Employees")  
+
+
+```
+
+## Question 3
+
+Now imagine you work for an investor and want to see which industries generate the most revenue per employee. Create a chart that makes this information clear. Once again, the distribution per industry should be shown.
+
+```{r, fig.height = 10, fig.width = 8}
+inc %>%
+  filter(complete.cases(.)) %>%
+  group_by(Industry) %>%
+  mutate(Revenue_Per_Employee = sum(Revenue) /  sum(Employees)) %>%
+  distinct(Revenue_Per_Employee) %>%
+  ggplot(., aes(x= Revenue_Per_Employee, 
+                y = reorder(Industry, Revenue_Per_Employee))) +
+  geom_bar(stat = "identity", ) +
+  labs(title = "Distribution of Revenue Per Employee by Industry", 
+       y = "Industry", 
+       x = "Revenue Per Employee")
+```
